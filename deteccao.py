@@ -18,18 +18,28 @@ def pegadados(caminho = 'UDA-1'):
     return imagens, tipo
 
 def divide(img, labels):
-    tamanho_teste = len(img)/3
-    img_teste = img[0:tamanho_teste,...]
-    img_treino = img[tamanho_teste:,...]
+    tamanho_teste = int(len(img)//3)
 
-    labels_teste = labels[0:labels,...]
-    labels_treino = labels[labels:,...]
+    teste_img = []
+    teste_labels = []
+    treino_img = []
+    treino_labels = []
 
-    return img_teste, img_treino, labels_teste, labels_treino 
+    print(tamanho_teste)
+    for i in range(0,len(img)):
+        if i < tamanho_teste:
+            teste_img.append(img[i])
+            teste_labels.append(labels[i])
+        else:
+            treino_img.append(img[i])
+            treino_labels.append(labels[i])
+
+    return teste_img, treino_img, teste_labels, treino_labels 
 
 def main():
     imagens, label = pegadados("UDA-TESTE")
-    img_teste, img_treino, labels_teste, labels_treino = divide(imagens, label)
+    teste_img, treino_img, teste_labels, treino_labels = divide(imagens, label)
+    print("---teste---\n", teste_labels, "\n---treino---\n", treino_labels)
 
     for i in label:
         print(i)
