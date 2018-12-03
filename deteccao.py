@@ -1,15 +1,21 @@
+#importações extras
 import numpy as np
 import os
 import cv2
 import json
 import re
-
+from sklearn.model_selection import train_test_split
+#importações para a CNN
 from keras.models import Sequential
 from keras.layers.core import Flatten
 from keras.layers.core import Dense
 from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import MaxPooling2D
 from keras.layers.core import Activation
+
+from keras.optimizers import SGD
+from keras.utils import to_categorical
+
 
 def pegadados(caminho = 'UDA-1'):
     imagens = []
@@ -21,11 +27,14 @@ def pegadados(caminho = 'UDA-1'):
             if filename.endswith('.json'):
                 a = open(dirname+"//"+filename).read()
                 descricao = json.loads(a)
-                tipo.append(descricao['meta']['clinical']['benign_malignant'])
+                if descricao['meta']['clinical']['benign_malignant'] == "benign":
+                    tipo.append(0) #cancer benigno
+                else:
+                    tipo.append(1) #cancer maligno
     return imagens, tipo
 
-def CNN(largura, altura, canais, classes):
-    tamanho_entrada = (altura, largura, canais)
+def CNN(altura, largura, canais, classes):
+    tamanho_entrada = (largura, altura, canais)
  
     modelo = Sequential()
     modelo.add(Conv2D(6, (5, 5), padding="same", input_shape=tamanho_entrada))
@@ -44,29 +53,21 @@ def CNN(largura, altura, canais, classes):
  
     return modelo
 
-def divide(img, labels):
-    tamanho_teste = int(len(img)//3)
-
-    teste_img = []
-    teste_labels = []
-    treino_img = []
-    treino_labels = []
-
-    for i in range(0,len(img)):
-        if i < tamanho_teste:
-            teste_img.append(img[i])
-            teste_labels.append(labels[i])
-        else:
-            treino_img.append(img[i])
-            treino_labels.append(labels[i])
-
-    return teste_img, treino_img, teste_labels, treino_labels 
-
 def main():
     imagens, label = pegadados("UDA-TESTE")
-    teste_img, treino_img, teste_labels, treino_labels = divide(imagens, label)
+
+    (trainX, testX, trainY, testY) = train_test_split(imagens, label)#dividir teste e treino
+    
+    #converte os labels para binarios
+    testY = to_categorical(testY, 2)
+    trainY = to_categorical(trainY, 2)
+
     largura, altura, canais = imagens[0].shape
-    cnn = CNN(largura,altura,canais,2)
+    
+    cnn = CNN(altura, largura, canais, 2)
+    cnn.compile(optimizer=SGD(0.01), loss="categorical_crossentropy", metrics=["accuracy"])
+    H = cnn.fit(trainX, batch_size=128, epochs=20, verbose=2, validation_data=(testX, testY))
+
     """
     for imagen in imagens:
         cv2.imshow("imagen",imagen)
