@@ -62,10 +62,6 @@ def CNN(altura, largura, canais, classes):
 
 def main():
     imagens, label = pegadados("UDA-TESTE")
-    for img in imagens:
-        cv2.imshow("imagen",img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
 
     (trainX, testX, trainY, testY) = train_test_split(imagens, label)#dividir teste e treino
     
@@ -77,7 +73,7 @@ def main():
     
     cnn = CNN(altura, largura, canais, 2)
     cnn.compile(optimizer=SGD(0.01), loss="categorical_crossentropy", metrics=["accuracy"])
-    H = cnn.fit(trainX, batch_size=128, epochs=20, verbose=2, validation_data=(testX, testY))
+    H = cnn.fit(trainX, trainY, batch_size=128, epochs=20, verbose=2, validation_data=(testX, testY))
 
     """
     for imagen in imagens:
