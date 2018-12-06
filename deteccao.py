@@ -18,19 +18,26 @@ from keras.utils import to_categorical
 
 
 def pegadados(caminho = 'UDA-1'):
-    imagens = []
-    tipo = []
+    imagens = np.array([])
+    tipo = np.array([])
     for (dirname, dirs, files) in os.walk(caminho):
         for filename in files:
             if filename.endswith('.jpg'):
-               imagens.append(cv2.imread(dirname+"//"+filename,cv2.IMREAD_ANYCOLOR))
+                if imagens.shape[0] != 0:
+                    imagens = np.append(imagens, [cv2.imread(dirname+"//"+filename,cv2.IMREAD_ANYCOLOR)])
+                else:
+                    imagens = np.array([cv2.imread(dirname+"//"+filename,cv2.IMREAD_ANYCOLOR)])
             if filename.endswith('.json'):
                 a = open(dirname+"//"+filename).read()
                 descricao = json.loads(a)
                 if descricao['meta']['clinical']['benign_malignant'] == "benign":
-                    tipo.append(0) #cancer benigno
+                    tipo = np.append(tipo, 0) #cancer benigno
                 else:
-                    tipo.append(1) #cancer maligno
+                    tipo = np.append(tipo, 1) #cancer maligno
+                    
+    print(imagens.shape)
+    imagens = imagens.reshape(tipo.shape[0],767,1022,3)
+    print(imagens.shape)
     return imagens, tipo
 
 def CNN(altura, largura, canais, classes):
@@ -55,6 +62,10 @@ def CNN(altura, largura, canais, classes):
 
 def main():
     imagens, label = pegadados("UDA-TESTE")
+    for img in imagens:
+        cv2.imshow("imagen",img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     (trainX, testX, trainY, testY) = train_test_split(imagens, label)#dividir teste e treino
     
