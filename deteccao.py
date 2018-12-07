@@ -1,9 +1,12 @@
 #importações extras
+import pickle
 import numpy as np
 import os
 import cv2
 import json
 import re
+import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 #importações para a CNN
 from keras.models import Sequential
@@ -65,15 +68,31 @@ def main():
 
     (trainX, testX, trainY, testY) = train_test_split(imagens, label)#dividir teste e treino
     
+    print("testY  normal: ",testY)
+
     #converte os labels para binarios
     testY = to_categorical(testY, 2)
+    print("testY: ",testY)
     trainY = to_categorical(trainY, 2)
 
     largura, altura, canais = imagens[0].shape
     
+    print("[INFO] inicializando e otimizando a CNN...")
     cnn = CNN(altura, largura, canais, 2)
     cnn.compile(optimizer=SGD(0.01), loss="categorical_crossentropy", metrics=["accuracy"])
-    H = cnn.fit(trainX, trainY, batch_size=128, epochs=20, verbose=2, validation_data=(testX, testY))
+    print("[INFO] treinando a CNN...")
+    H = cnn.fit(trainX, trainY, batch_size=128, epochs=1, verbose=2, validation_data=(testX, testY))
+
+    print("[INFO] avaliando a CNN...")
+    predictions = cnn.predict(testX, batch_size=64)
+    print(classification_report(testY.argmax(axis=1), predictions.argmax(axis=1),
+                            target_names=[str(label) for label in range(10)]))
+    
+    s = pickle.dumps(cnn)
+    cnn = pickle.loads(s)
+    print(cnn.predict(imagens))
+    print(label)
+
 
     """
     for imagen in imagens:
