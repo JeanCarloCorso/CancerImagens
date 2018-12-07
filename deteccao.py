@@ -23,30 +23,29 @@ from keras.utils import to_categorical
 def pegadados(caminho = 'UDA-1'):
     imagens = np.array([])
     tipo = np.array([])
-    cont1 = 0
-    cont2 = 0
+    print("[INFO] Coletando os dados...")
     for (dirname, dirs, files) in os.walk(caminho):
-        for filename in files:
+        for filename in sorted(files):
             if filename.endswith('.jpg'):
-                cont1 += 1
+                print("-> Imagem: ",filename)
+                img = cv2.imread(dirname+"//"+filename,cv2.IMREAD_ANYCOLOR)
+                img = cv2.resize(img, (767, 1022))
+                img = img.reshape(1,img.shape[0],img.shape[1],img.shape[2])
                 if imagens.shape[0] != 0:
-                    imagens = np.append(imagens, [cv2.imread(dirname+"//"+filename,cv2.IMREAD_ANYCOLOR)])
+                    imagens = np.append(imagens, img, axis=0)
                 else:
-                    imagens = np.array([cv2.imread(dirname+"//"+filename,cv2.IMREAD_ANYCOLOR)])
+                    imagens = np.array(img)
             if filename.endswith('.json'):
-                cont2 += 1
+                print("-> Dados img: ",filename)
                 a = open(dirname+"//"+filename).read()
                 descricao = json.loads(a)
                 if descricao['meta']['clinical']['benign_malignant'] == "benign":
                     tipo = np.append(tipo, 0) #cancer benigno
                 else:
                     tipo = np.append(tipo, 1) #cancer maligno
+        break
                     
-    print(imagens.shape)
-    print("qtd dados: ", cont1)
-    print("qtd labels: ", cont2)
-    imagens = imagens.reshape(tipo.shape[0],767,1022,3)
-    print(imagens.shape)
+    print("Total de imagens importadas: ",imagens.shape[0])
     return imagens, tipo
 
 def CNN(altura, largura, canais, classes):
@@ -70,7 +69,7 @@ def CNN(altura, largura, canais, classes):
     return modelo
 
 def main():
-    imagens, label = pegadados('UDA-TESTE')
+    imagens, label = pegadados()  
 
     (trainX, testX, trainY, testY) = train_test_split(imagens, label)#dividir teste e treino
     
@@ -93,8 +92,8 @@ def main():
     
     #s = pickle.dumps(cnn)
     #cnn = pickle.loads(s)
-    print(cnn.predict(trainX))
-    print(trainY)
+    print(cnn.predict(trainX[0]))
+    print(trainY[0])
 
 
     """
