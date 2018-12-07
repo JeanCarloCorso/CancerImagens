@@ -23,14 +23,18 @@ from keras.utils import to_categorical
 def pegadados(caminho = 'UDA-1'):
     imagens = np.array([])
     tipo = np.array([])
+    cont1 = 0
+    cont2 = 0
     for (dirname, dirs, files) in os.walk(caminho):
         for filename in files:
             if filename.endswith('.jpg'):
+                cont1 += 1
                 if imagens.shape[0] != 0:
                     imagens = np.append(imagens, [cv2.imread(dirname+"//"+filename,cv2.IMREAD_ANYCOLOR)])
                 else:
                     imagens = np.array([cv2.imread(dirname+"//"+filename,cv2.IMREAD_ANYCOLOR)])
             if filename.endswith('.json'):
+                cont2 += 1
                 a = open(dirname+"//"+filename).read()
                 descricao = json.loads(a)
                 if descricao['meta']['clinical']['benign_malignant'] == "benign":
@@ -39,6 +43,8 @@ def pegadados(caminho = 'UDA-1'):
                     tipo = np.append(tipo, 1) #cancer maligno
                     
     print(imagens.shape)
+    print("qtd dados: ", cont1)
+    print("qtd labels: ", cont2)
     imagens = imagens.reshape(tipo.shape[0],767,1022,3)
     print(imagens.shape)
     return imagens, tipo
@@ -64,34 +70,31 @@ def CNN(altura, largura, canais, classes):
     return modelo
 
 def main():
-    imagens, label = pegadados("UDA-TESTE")
+    imagens, label = pegadados('UDA-TESTE')
 
     (trainX, testX, trainY, testY) = train_test_split(imagens, label)#dividir teste e treino
     
-    print("testY  normal: ",testY)
-
     #converte os labels para binarios
     testY = to_categorical(testY, 2)
-    print("testY: ",testY)
     trainY = to_categorical(trainY, 2)
 
     largura, altura, canais = imagens[0].shape
     
     print("[INFO] inicializando e otimizando a CNN...")
     cnn = CNN(altura, largura, canais, 2)
-    cnn.compile(optimizer=SGD(0.01), loss="categorical_crossentropy", metrics=["accuracy"])
+    cnn.compile(optimizer=SGD(0.1), loss="categorical_crossentropy", metrics=["accuracy"])
     print("[INFO] treinando a CNN...")
-    H = cnn.fit(trainX, trainY, batch_size=128, epochs=1, verbose=2, validation_data=(testX, testY))
+    H = cnn.fit(trainX, trainY, batch_size=128, epochs=5, verbose=2, validation_data=(testX, testY))
 
     print("[INFO] avaliando a CNN...")
     predictions = cnn.predict(testX, batch_size=64)
     print(classification_report(testY.argmax(axis=1), predictions.argmax(axis=1),
                             target_names=[str(label) for label in range(10)]))
     
-    s = pickle.dumps(cnn)
-    cnn = pickle.loads(s)
-    print(cnn.predict(imagens))
-    print(label)
+    #s = pickle.dumps(cnn)
+    #cnn = pickle.loads(s)
+    print(cnn.predict(trainX))
+    print(trainY)
 
 
     """
