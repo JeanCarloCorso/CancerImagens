@@ -86,8 +86,9 @@ def main():
         
         print("[INFO] avaliando a CNN...")
         predicao = cnn.predict(imagens)
-        confusion = confusion_matrix(label, predicao)
-        print(confusao)
+        label = to_categorical(label, 2)[...,1]
+        confusion = confusion_matrix(label, predicao[...,1])
+        print(confusion)
         print("TPR: ", confusion[0][0] / (confusion[0][0] + confusion[0][1]))
         print("TNR: ", confusion[1][1] / (confusion[1][0] + confusion[1][1]))
     else:
@@ -95,15 +96,15 @@ def main():
         cnn = CNN(altura, largura, canais, 2)
         cnn.compile(optimizer=SGD(0.1), loss="categorical_crossentropy", metrics=["accuracy"])
         print("[INFO] treinando a CNN...")
-        H = cnn.fit(trainX, trainY, batch_size=128, epochs=5, verbose=2, validation_data=(testX, testY))
+        H = cnn.fit(trainX, trainY, batch_size=128, epochs=20, verbose=2, validation_data=(testX, testY))
         
         print("[INFO] salvando a CNN...")
         dump(cnn,'cnn.joblib')
    
-    print("[INFO] avaliando a CNN...")
-    predictions = cnn.predict(imagens, batch_size=64)
-    print(classification_report(testY.argmax(axis=1), predictions.argmax(axis=1),
-                            target_names=[str(label) for label in range(10)]))
+    #print("[INFO] avaliando a CNN...")
+    #predictions = cnn.predict(imagens, batch_size=64)
+    #print(classification_report(testY.argmax(axis=1), predictions.argmax(axis=1),
+    #                        target_names=[str(label) for label in range(10)]))
     
     #print(cnn.predict(trainX[0]))
     #print(trainY[0])
