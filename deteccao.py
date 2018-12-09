@@ -1,7 +1,8 @@
 #importações extras
-import pickle
+from joblib import dump, load
 import numpy as np
 import os
+from sklearn.metrics import confusion_matrix
 import cv2
 import json
 import re
@@ -69,7 +70,7 @@ def CNN(altura, largura, canais, classes):
     return modelo
 
 def main():
-    imagens, label = pegadados()  
+    imagens, label = pegadados('UDA-TESTE')  
 
     (trainX, testX, trainY, testY) = train_test_split(imagens, label)#dividir teste e treino
     
@@ -78,22 +79,36 @@ def main():
     trainY = to_categorical(trainY, 2)
 
     largura, altura, canais = imagens[0].shape
-    
-    print("[INFO] inicializando e otimizando a CNN...")
-    cnn = CNN(altura, largura, canais, 2)
-    cnn.compile(optimizer=SGD(0.1), loss="categorical_crossentropy", metrics=["accuracy"])
-    print("[INFO] treinando a CNN...")
-    H = cnn.fit(trainX, trainY, batch_size=128, epochs=5, verbose=2, validation_data=(testX, testY))
 
+    if(os.path.exists('cnn.joblib')):
+        print("[INFO] carregando a CNN...")
+        cnn = load('cnn.joblib')
+        
+        print("[INFO] avaliando a CNN...")
+        predicao = cnn.predict(imagens)
+        confusion = confusion_matrix(label, predicao)
+        print(confusao)
+        print("TPR: ", confusion[0][0] / (confusion[0][0] + confusion[0][1]))
+        print("TNR: ", confusion[1][1] / (confusion[1][0] + confusion[1][1]))
+    else:
+        print("[INFO] inicializando e otimizando a CNN...")
+        cnn = CNN(altura, largura, canais, 2)
+        cnn.compile(optimizer=SGD(0.1), loss="categorical_crossentropy", metrics=["accuracy"])
+        print("[INFO] treinando a CNN...")
+        H = cnn.fit(trainX, trainY, batch_size=128, epochs=5, verbose=2, validation_data=(testX, testY))
+        
+        print("[INFO] salvando a CNN...")
+        dump(cnn,'cnn.joblib')
+   
     print("[INFO] avaliando a CNN...")
-    predictions = cnn.predict(testX, batch_size=64)
+    predictions = cnn.predict(imagens, batch_size=64)
     print(classification_report(testY.argmax(axis=1), predictions.argmax(axis=1),
                             target_names=[str(label) for label in range(10)]))
     
-    #s = pickle.dumps(cnn)
-    #cnn = pickle.loads(s)
-    print(cnn.predict(trainX[0]))
-    print(trainY[0])
+    #print(cnn.predict(trainX[0]))
+    #print(trainY[0])
+
+    
 
 
     """
